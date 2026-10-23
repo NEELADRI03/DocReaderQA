@@ -1,0 +1,56 @@
+# Runs on every `git commit`. Run on all files: pre-commit run --all-files
+# Some PDFs look like text to the whitespace hooks, which would corrupt them
+exclude: \.pdf$
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+
+  # Backend: ruff finds docqa-backend/pyproject.toml on its own
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.2
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^docqa-backend/
+      - id: ruff-format
+        files: ^docqa-backend/
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.4.0
+    hooks:
+      - id: mypy
+        files: ^docqa-backend/
+        # Check the whole backend, not just the changed files, so imports resolve
+        pass_filenames: false
+        args: [--config-file=docqa-backend/pyproject.toml, docqa-backend/app, docqa-backend/tests]
+        # mypy runs in its own environment, so it needs the packages it type-checks against
+        additional_dependencies: [fastapi, arq, pytest, httpx2]
+
+  # Frontend: uses the tools installed in docqa-frontend/node_modules
+  - repo: local
+    hooks:
+      - id: frontend-eslint
+        name: eslint (frontend)
+        entry: npm --prefix docqa-frontend run lint
+        language: system
+        files: ^docqa-frontend/.*\.(ts|tsx|js)$
+        pass_filenames: false
+      - id: frontend-prettier
+        name: prettier (frontend)
+        entry: npm --prefix docqa-frontend run format:check
+        language: system
+        files: ^docqa-frontend/
+        pass_filenames: false
+      - id: frontend-tsc
+        name: tsc (frontend)
+        entry: npm --prefix docqa-frontend run typecheck
+        language: system
+        files: ^docqa-frontend/.*\.(ts|tsx)$|^docqa-frontend/tsconfig.*\.json$
+        pass_filenames: false

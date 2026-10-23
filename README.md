@@ -7,6 +7,7 @@ docqa-backend/    FastAPI API and ARQ worker (Python 3.12), one shared image
 docqa-frontend/   React + TypeScript + Vite
 docs/             Architecture, backlog and story guides
 scripts/          Host-side helpers (Ollama setup)
+.github/          CI workflow (GitHub Actions)
 docker-compose.yml
 .env.example      Every environment variable, documented
 ```
@@ -91,6 +92,31 @@ docker compose down -v   # also delete the volumes, which WIPES THE DATABASE
 ```
 
 Uploaded files are stored in `./storage` on the host, and `down -v` does not touch them. Delete that folder by hand for a full reset.
+
+## Code quality
+
+Ruff and mypy check the backend. ESLint, Prettier and tsc check the frontend. pre-commit runs them on every commit, and GitHub Actions runs them, plus the tests, on every pull request.
+
+One-time setup, from the repo root:
+
+```powershell
+cd docqa-backend
+py -3.12 -m venv .venv
+.\.venv\Scripts\python -m pip install -r requirements-dev.txt
+.\.venv\Scripts\pre-commit install
+cd ..\docqa-frontend
+npm install
+cd ..
+```
+
+| | Backend (`docqa-backend`, venv active) | Frontend (`docqa-frontend`) |
+|---|---|---|
+| Lint | `ruff check .` | `npm run lint` |
+| Fix formatting | `ruff format .` | `npm run format` |
+| Type check | `mypy app tests` | `npm run typecheck` |
+| Tests | `pytest` | (none yet) |
+
+Run every hook on every file: `pre-commit run --all-files`. If a hook changes a file, the commit stops. `git add` the changes and commit again.
 
 ## Troubleshooting
 
