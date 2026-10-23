@@ -1,9 +1,12 @@
 import os
+from typing import Any
 
 from arq.connections import RedisSettings
 
-async def ping(ctx:dict)->str:
+
+async def ping(ctx: dict[str, Any]) -> str:
     return "pong"
+
 
 class WorkerSettings:
     functions = [ping]
