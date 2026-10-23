@@ -4,14 +4,17 @@
 .DESCRIPTION
     Reads LLM_MODEL, EMBEDDING_MODEL and EMBEDDING_DIM from .env (or .env.example if
     there is no .env yet), pulls both models, checks the embedding size matches
-    EMBEDDING_DIM, and loads the LLM once to prove it fits in memory.
+    EMBEDDING_DIM, and loads the LLM once to prove it fits in memory and gets the
+    context length from OLLAMA_CONTEXT_LENGTH (decision D10).
     Safe to re-run: models you already have are only updated.
 .EXAMPLE
     .\scripts\setup-ollama.ps1
 #>
 param(
     # The script runs on the host, so it talks to Ollama on localhost
-    [string]$OllamaUrl = 'http://localhost:11434'
+    [string]$OllamaUrl = 'http://localhost:11434',
+    # Ollama's default is too small for the ~6k-token source budget (D10)
+    [int]$ContextLength = 8192
 )
 
 $ErrorActionPreference = 'Stop'
@@ -66,5 +69,13 @@ Write-Host "`nLoading $llm (the first load can take a minute) ..."
 $body = @{ model = $llm } | ConvertTo-Json
 Invoke-RestMethod "$OllamaUrl/api/generate" -Method Post -Body $body -ContentType 'application/json' -TimeoutSec 600 | Out-Null
 Write-Host "LLM OK: $llm loaded"
+
+# The OpenAI-compatible endpoint can't set the context per request, so Ollama must start with it
+$loaded = (Invoke-RestMethod "$OllamaUrl/api/ps").models | Where-Object { $_.name -eq $llm -or $_.name -eq "${llm}:latest" }
+if ($loaded.context_length -lt $ContextLength) {
+    throw ("$llm runs with a $($loaded.context_length)-token context, but DocQA needs $ContextLength. " +
+        "Run: setx OLLAMA_CONTEXT_LENGTH $ContextLength, then quit Ollama from the tray, start it from the Start menu, and run this script again.")
+}
+Write-Host "Context OK: $($loaded.context_length) tokens"
 
 Write-Host "`nDone. Try it: ollama run $llm"

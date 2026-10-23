@@ -48,7 +48,13 @@ You only need Python 3.12 and Node 22+ if you want to run the backend or fronten
 
 The LLM and embedding models run in Ollama on the host. Ollama is installed on Windows, not in Docker. The containers reach it at `OLLAMA_BASE_URL` (`http://host.docker.internal:11434`).
 
-Pull the models named in `.env` and check that they work:
+Ollama must run with an 8192-token context (decision D10). Its default is too small for the ~6k tokens of sources sent with each question, and the OpenAI-compatible endpoint the backend uses can't change it per request. Set it once, then quit Ollama from the system tray and start it again from the Start menu:
+
+```powershell
+setx OLLAMA_CONTEXT_LENGTH 8192
+```
+
+Pull the models named in `.env` and check that they work, including the context length:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\setup-ollama.ps1
