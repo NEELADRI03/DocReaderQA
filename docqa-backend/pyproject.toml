@@ -1,0 +1,15 @@
+# Tool settings only. Dependencies stay in requirements*.txt
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I import order, B bugbear, UP pyupgrade, SIM simplify
+select = ["E", "W", "F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

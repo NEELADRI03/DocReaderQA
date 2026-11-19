@@ -1,0 +1,8 @@
+-r requirements.txt
+
+ruff==0.17.2
+mypy==2.4.0
+pytest==9.1.1
+# Starlette's TestClient needs httpx2 (plain httpx is deprecated for it)
+httpx2>=2.16
+pre-commit==4.7.0
