@@ -5,7 +5,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U docqa"]
       interval: 5s
@@ -30,6 +30,7 @@ services:
       - "8000:8000"
     volumes:
       - ./docqa-backend/app:/code/app
+      - ./docqa-backend/alembic:/code/alembic
       - ./storage:/data/storage
     # Lets the containers reach Ollama running on the Windows host
     extra_hosts:

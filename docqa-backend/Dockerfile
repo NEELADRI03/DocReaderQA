@@ -7,6 +7,9 @@ WORKDIR /code
 # Install dependencies first so this layer is cached until requirements.txt changes
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+# Alembic reads alembic.ini and the migrations from /code
+COPY alembic.ini .
+COPY alembic ./alembic
 COPY app ./app
 EXPOSE 8000
 # Default command runs the API; docker-compose overrides it for the worker

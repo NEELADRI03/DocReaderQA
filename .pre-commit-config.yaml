@@ -31,7 +31,7 @@ repos:
         pass_filenames: false
         args: [--config-file=docqa-backend/pyproject.toml, docqa-backend/app, docqa-backend/tests]
         # mypy runs in its own environment, so it needs the packages it type-checks against
-        additional_dependencies: [fastapi, arq, pytest, httpx2]
+        additional_dependencies: [fastapi, arq, pytest, httpx2, pydantic-settings, "sqlalchemy[asyncio]", alembic]
 
   # Frontend: uses the tools installed in docqa-frontend/node_modules
   - repo: local

@@ -62,6 +62,13 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup-ollama.ps1
 
 Re-run it after you change `LLM_MODEL` or `EMBEDDING_MODEL`.
 
+### Providers
+
+The backend talks to Ollama through two interfaces in `docqa-backend/app/providers/`: `Embedder` and `LLMClient`. `LLM_PROVIDER` and `EMBEDDING_PROVIDER` pick the implementation (only `ollama` so far). It uses Ollama's OpenAI-compatible API at `OLLAMA_BASE_URL/v1`.
+
+- `LLM_REASONING_EFFORT=none` turns `qwen3`'s thinking off. With thinking on, answers are much slower on a CPU, and the thinking uses up `max_tokens`.
+- `EMBEDDING_DOCUMENT_PREFIX` / `EMBEDDING_QUERY_PREFIX` are the task prefixes `nomic-embed-text` expects. Keep the quotes in `.env`. If you change `EMBEDDING_MODEL`, check what prefixes the new model needs.
+
 ### RAM needs
 
 | Model | Role | Download | RAM while loaded |
@@ -85,10 +92,31 @@ Re-run it after you change `LLM_MODEL` or `EMBEDDING_MODEL`.
 | `api` | http://localhost:8000/api/v1/health | FastAPI. It reloads automatically when you edit code. |
 | | http://localhost:8000/docs | Interactive API docs |
 | `worker` | (no port) | ARQ background worker. See its output with `docker compose logs -f worker`. |
-| `postgres` | `localhost:5432` | PostgreSQL 16 with pgvector (user, password and database: `docqa`) |
+| `postgres` | `localhost:5433` | PostgreSQL 16 with pgvector (user, password and database: `docqa`). Published on 5433 so it doesn't clash with a local PostgreSQL on 5432. |
 | `redis` | `localhost:6379` | Redis 7, used as the job queue |
 
 The backend `app/` folder and the whole frontend folder are mounted into the containers, so code changes take effect without a rebuild. After you change `requirements.txt` or `package.json`, rebuild with `docker compose up --build`.
+
+## Database migrations
+
+The schema is versioned with Alembic (`docqa-backend/alembic/versions/`). After the first `docker compose up`, and after pulling new migrations:
+
+```powershell
+docker compose exec api alembic upgrade head
+```
+
+Until you do, `/api/v1/health` reports `vector extension missing`.
+
+To change the schema, edit the models in `app/db/models.py`, then generate a migration and read it before committing:
+
+```powershell
+docker compose exec api alembic revision --autogenerate -m "Describe the change"
+docker compose exec api alembic upgrade head
+```
+
+Undo the last migration with `docker compose exec api alembic downgrade -1`.
+
+Alembic must run inside the `api` container: the database host `postgres` only resolves on the Docker network.
 
 ## Stopping and resetting
 
@@ -122,13 +150,27 @@ cd ..
 | Type check | `mypy app tests` | `npm run typecheck` |
 | Tests | `pytest` | (none yet) |
 
+The database tests in `tests/test_db.py` are skipped unless `TEST_DATABASE_URL` is set. They need a database whose name ends in `_test`; create it once and point the tests at it:
+
+```powershell
+docker compose exec postgres createdb -U docqa docqa_test
+$env:TEST_DATABASE_URL = "postgresql+asyncpg://docqa:docqa@localhost:5433/docqa_test"
+```
+
+The tests in `tests/test_providers_live.py` call the real Ollama and are skipped unless `TEST_OLLAMA_URL` is set:
+
+```powershell
+$env:TEST_OLLAMA_URL = "http://localhost:11434"
+pytest tests/test_providers_live.py
+```
+
 Run every hook on every file: `pre-commit run --all-files`. If a hook changes a file, the commit stops. `git add` the changes and commit again.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| `port is already allocated` | Another process is using 5432, 6379, 8000 or 5173. Stop it, or change the left-hand port in `docker-compose.yml`. |
+| `port is already allocated` | Another process is using 5433, 6379, 8000 or 5173. Stop it, or change the left-hand port in `docker-compose.yml`. |
 | Frontend doesn't hot-reload | `server.watch.usePolling` must stay `true` in `docqa-frontend/vite.config.ts`. |
 | Frontend fails with missing packages after a dependency change | Run `docker compose up --build --renew-anon-volumes frontend`. |
 | `api`/`worker` wait forever | Run `docker compose logs postgres redis` and check that the healthchecks pass. |
