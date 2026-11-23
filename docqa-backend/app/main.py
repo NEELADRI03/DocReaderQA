@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.errors import register_error_handlers
 from app.api.router import api_router
 from app.db.session import engine
 
@@ -21,4 +22,5 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="DocQA API", lifespan=lifespan)
+register_error_handlers(app)
 app.include_router(api_router)
