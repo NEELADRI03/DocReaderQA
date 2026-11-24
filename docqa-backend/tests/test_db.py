@@ -1,13 +1,10 @@
-import os
 import uuid
-from collections.abc import AsyncIterator, Iterator
-from pathlib import Path
+from collections.abc import AsyncIterator
 
 import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import select, text
-from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
@@ -15,29 +12,6 @@ from app.db.models import Collection, User
 
 # Async tests run on asyncio through the anyio plugin that comes with FastAPI
 pytestmark = pytest.mark.anyio
-
-
-@pytest.fixture(scope="module")
-def database_url() -> str:
-    url = os.environ.get("TEST_DATABASE_URL")
-    if not url:
-        pytest.skip("TEST_DATABASE_URL not set")
-    # These tests drop every table, so refuse anything that isn't a throwaway database
-    if not (make_url(url).database or "").endswith("_test"):
-        pytest.fail("TEST_DATABASE_URL must point at a database whose name ends in _test")
-    return url
-
-
-@pytest.fixture(scope="module")
-def alembic_config(database_url: str) -> Iterator[Config]:
-    config = Config(Path(__file__).parents[1] / "alembic.ini")
-    config.set_main_option("sqlalchemy.url", database_url)
-
-    # Start from an empty database, run every migration, and clean up afterwards
-    command.downgrade(config, "base")
-    command.upgrade(config, "head")
-    yield config
-    command.downgrade(config, "base")
 
 
 @pytest.fixture
