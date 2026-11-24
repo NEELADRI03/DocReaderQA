@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
 
@@ -23,3 +23,19 @@ class UserRead(BaseModel):
     id: uuid.UUID
     email: str
     created_at: datetime
+
+
+class LoginRequest(BaseModel):
+    email: Email
+    password: str
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: Literal["bearer"] = "bearer"
+    expires_in: int

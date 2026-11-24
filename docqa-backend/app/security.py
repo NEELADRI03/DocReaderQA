@@ -1,3 +1,5 @@
+import secrets
+
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 
@@ -14,3 +16,6 @@ def verify_password(password_hash: str, password: str) -> bool:
         return _hasher.verify(password_hash, password)
     except VerificationError:
         return False
+
+
+DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))

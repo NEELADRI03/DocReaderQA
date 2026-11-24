@@ -30,3 +30,10 @@ def test_jwt_secret_is_hidden_when_printed() -> None:
     settings = Settings()  # type: ignore[call-arg]
 
     assert "test-secret" not in repr(settings)
+
+
+def test_short_jwt_secret_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("JWT_SECRET", "change-me")
+
+    with pytest.raises(ValidationError, match="jwt_secret"):
+        Settings()  # type: ignore[call-arg]

@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode
 
 
@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     embedding_document_prefix: str = "search_document: "
     embedding_query_prefix: str = "search_query: "
 
-    jwt_secret: SecretStr
+    # jwt_secret: SecretStr
+    jwt_secret: Annotated[SecretStr, Field(min_length=32)]
     access_token_minutes: int = 30
     refresh_token_days: int = 7
 

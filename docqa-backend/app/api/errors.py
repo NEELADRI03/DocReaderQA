@@ -28,16 +28,22 @@ class ErrorResponse(BaseModel):
 class ApiError(Exception):
     """Raise this from a route to answer with the envelope and a stable code."""
 
-    def __init__(self, status_code: int, code: str, message: str) -> None:
+    def __init__(
+        self, status_code: int, code: str, message: str, headers: dict[str, str] | None = None
+    ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.code = code
         self.message = message
+        # Sent with the response, such as WWW-Authenticate on a 401
+        self.headers = headers
 
 
-def _envelope(status_code: int, body: ErrorBody) -> JSONResponse:
+def _envelope(
+    status_code: int, body: ErrorBody, headers: dict[str, str] | None = None
+) -> JSONResponse:
     content = ErrorResponse(error=body).model_dump(exclude_none=True)
-    return JSONResponse(status_code=status_code, content=content)
+    return JSONResponse(status_code=status_code, content=content, headers=headers)
 
 
 def _field(error: dict[str, Any]) -> str:
@@ -51,7 +57,8 @@ def _field(error: dict[str, Any]) -> str:
 
 async def _api_error(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, ApiError)
-    return _envelope(exc.status_code, ErrorBody(code=exc.code, message=exc.message))
+    body = ErrorBody(code=exc.code, message=exc.message)
+    return _envelope(exc.status_code, body, exc.headers)
 
 
 async def _validation_error(request: Request, exc: Exception) -> JSONResponse:

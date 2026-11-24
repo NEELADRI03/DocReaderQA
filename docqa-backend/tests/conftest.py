@@ -9,7 +9,7 @@ from sqlalchemy.engine import make_url
 
 # Settings has required fields. Give them test values before any app module reads them.
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test")
-os.environ.setdefault("JWT_SECRET", "test-secret")
+os.environ.setdefault("JWT_SECRET", "change-me-to-a-random-string-of-32-characters-or-more-chars")
 
 
 @pytest.fixture(scope="module")
