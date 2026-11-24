@@ -27,7 +27,8 @@ class UserRead(BaseModel):
 
 class LoginRequest(BaseModel):
     email: Email
-    password: str
+    # No minimum: length rules are for choosing a password, and a wrong one just doesn't match
+    password: str = Field(max_length=PASSWORD_MAX_LENGTH, repr=False)
 
 
 class RefreshRequest(BaseModel):

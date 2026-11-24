@@ -82,7 +82,7 @@ async def refresh(body: RefreshRequest, session: Session) -> TokenResponse:
 
     invalid = ApiError(
         status.HTTP_401_UNAUTHORIZED,
-        "INVALID_CREDENTIALS",
+        "INVALID_TOKEN",
         "The refresh token is invalid or has expired.",
         headers=BEARER,
     )
