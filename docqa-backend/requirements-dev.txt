@@ -1,0 +1,8 @@
+-r requirements.txt
+
+ruff==0.17.2
+mypy==2.4.0
+pytest==9.1.1
+# asyncpg ships without type hints; mypy --strict needs these
+asyncpg-stubs==0.32.0
+pre-commit==4.7.0

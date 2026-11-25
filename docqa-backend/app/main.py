@@ -1,11 +1,26 @@
-from fastapi import APIRouter,FastAPI
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="DocQA API")
+from fastapi import FastAPI
 
-api_router = APIRouter(prefix="/api/v1")
+from app.api.errors import register_error_handlers
+from app.api.router import api_router
+from app.db.session import engine
 
-@api_router.get("/health")
-async def health() -> dict[str,str]:
-    return {"status":"ok"}
+# api_router = APIRouter(prefix="/api/v1")
 
+
+# @api_router.get("/health")
+# async def health() -> dict[str, str]:
+#     return {"status": "ok"}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    yield
+    await engine.dispose()
+
+
+app = FastAPI(title="DocQA API", lifespan=lifespan)
+register_error_handlers(app)
 app.include_router(api_router)
