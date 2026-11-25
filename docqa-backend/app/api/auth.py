@@ -1,24 +1,24 @@
 import uuid
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
+from app.api.deps import BEARER, CurrentUser, Session
 from app.api.errors import ApiError, ErrorResponse
 from app.db.models import User
-from app.db.session import get_session
 from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest, TokenResponse, UserRead
 from app.security import DUMMY_PASSWORD_HASH, hash_password, verify_password
 from app.tokens import InvalidTokenError, create_token, decode_token, token_lifetime
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-Session = Annotated[AsyncSession, Depends(get_session)]
+# This now comes from deps.py
 
-BEARER = {"WWW-Authenticate": "Bearer"}
+# Session = Annotated[AsyncSession, Depends(get_session)]
+
+# BEARER = {"WWW-Authenticate": "Bearer"}
 
 
 @router.post(
@@ -96,3 +96,8 @@ async def refresh(body: RefreshRequest, session: Session) -> TokenResponse:
         raise invalid
 
     return _issue_tokens(user_id)
+
+
+@router.get("/me", responses={401: {"model": ErrorResponse}})
+async def me(user: CurrentUser) -> UserRead:
+    return UserRead.model_validate(user)

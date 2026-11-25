@@ -1,15 +1,11 @@
 import uuid
-from collections.abc import AsyncIterator
 
 import httpx2
 import pytest
-from alembic.config import Config
 from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.db.models import User
-from app.db.session import get_session
-from app.main import app
 from app.security import verify_password
 from app.tokens import create_token, decode_token
 
@@ -19,32 +15,6 @@ REGISTER = "/api/v1/auth/register"
 LOGIN = "/api/v1/auth/login"
 REFRESH = "/api/v1/auth/refresh"
 PASSWORD = "correct horse battery staple"
-
-
-@pytest.fixture
-async def client() -> AsyncIterator[httpx2.AsyncClient]:
-    # Calls the app in-process; nothing listens on a port
-    transport = httpx2.ASGITransport(app=app)
-    async with httpx2.AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
-
-
-@pytest.fixture
-async def sessions(
-    database_url: str, alembic_config: Config
-) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
-    # The app's routes get sessions on the test database instead of DATABASE_URL
-    engine = create_async_engine(database_url)
-    factory = async_sessionmaker(engine, expire_on_commit=False)
-
-    async def test_session() -> AsyncIterator[AsyncSession]:
-        async with factory() as session:
-            yield session
-
-    app.dependency_overrides[get_session] = test_session
-    yield factory
-    app.dependency_overrides.clear()
-    await engine.dispose()
 
 
 def new_email() -> str:
