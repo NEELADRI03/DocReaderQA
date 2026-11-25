@@ -26,8 +26,8 @@ async def get_current_user(credentials: Credentials, session: Session) -> User:
     if credentials is None:
         raise ApiError(
             status.HTTP_401_UNAUTHORIZED,
-            "NOT_AUTHORIZED",
-            "Send an access token in the Authorization Header.",
+            "NOT_AUTHENTICATED",
+            "Send an access token in the Authorization header.",
             headers=BEARER,
         )
 
